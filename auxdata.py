@@ -53,3 +53,23 @@ class Auxhist:
     @property
     def rain(self):
         return self.rainc + self.rainnc
+
+    @property
+    def lats(self):
+        try:
+            with netcdf_file(self.abspath) as nc:
+                xs = nc.variables['XLAT'].data[0, :, 100]
+        except OSError as ose:
+            print('Cannot read latitude data from: ', self.basename)
+            raise ose
+        return xs
+
+    @property
+    def lons(self):
+        try:
+            with netcdf_file(self.abspath) as nc:
+                ys = nc.variables['XLONG'].data[0, 100, :]
+        except OSError as ose:
+            print('Cannot read longitude data from: ', self.basename)
+            raise ose
+        return ys

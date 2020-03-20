@@ -12,7 +12,7 @@ DATADIR = os.path.join(os.path.dirname(__file__), 'auxfiles')
 
 class TestAuxhist(unittest.TestCase):
     def setUp(self):
-        fnames = os.listdir(DATADIR)
+        fnames = [fname for fname in os.listdir(DATADIR) if fname.startswith('aux')]
         fname = fnames[random.randrange(0, len(fnames))]
         abs_fname = os.path.join(DATADIR, fname)
         self.aux = Auxhist(abs_fname)
@@ -29,8 +29,11 @@ class TestAuxhist(unittest.TestCase):
     def test_rainc(self):
         self.assertIsInstance(self.aux.rainc, np.ndarray)
 
-    def tearDown(self) -> None:
-        pass
+    def test_lats(self):
+        self.assertIsInstance(self.aux.lats, np.ndarray)
+
+    def test_lons(self):
+        self.assertIsInstance(self.aux.lons, np.ndarray)
 
 
 if __name__ == '__main__':
