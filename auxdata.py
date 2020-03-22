@@ -73,3 +73,6 @@ class Auxhist:
             print('Cannot read longitude data from: ', self.basename)
             raise ose
         return ys
+
+    def __gt__(self, other):
+        return self.start_dt > other.start_dt
