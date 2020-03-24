@@ -76,3 +76,6 @@ class Auxhist:
 
     def __gt__(self, other):
         return self.start_dt > other.start_dt
+
+    def __add__(self, other):
+        return self.rain + other.rain
