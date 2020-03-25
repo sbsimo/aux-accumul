@@ -1,7 +1,9 @@
 import os
 import datetime
 
+import numpy as np
 from scipy.io import netcdf_file
+from osgeo import gdal, osr
 
 
 class Auxhist:
@@ -34,7 +36,7 @@ class Auxhist:
     def rainc(self):
         try:
             with netcdf_file(self.abspath) as nc:
-                rainc = nc.variables['RAINC'].data[0]
+                rainc = nc.variables['RAINC'].data[0].copy()
         except OSError as ose:
             print('Cannot read RAINC data from: ', self.basename)
             raise ose
@@ -44,7 +46,7 @@ class Auxhist:
     def rainnc(self):
         try:
             with netcdf_file(self.abspath) as nc:
-                rainnc = nc.variables['RAINNC'].data[0]
+                rainnc = nc.variables['RAINNC'].data[0].copy()
         except OSError as ose:
             print('Cannot read RAINC data from: ', self.basename)
             raise ose
@@ -58,7 +60,7 @@ class Auxhist:
     def lats(self):
         try:
             with netcdf_file(self.abspath) as nc:
-                xs = nc.variables['XLAT'].data[0, :, 100]
+                xs = nc.variables['XLAT'].data[0, :, 100].copy()
         except OSError as ose:
             print('Cannot read latitude data from: ', self.basename)
             raise ose
@@ -68,7 +70,7 @@ class Auxhist:
     def lons(self):
         try:
             with netcdf_file(self.abspath) as nc:
-                ys = nc.variables['XLONG'].data[0, 100, :]
+                ys = nc.variables['XLONG'].data[0, 100, :].copy()
         except OSError as ose:
             print('Cannot read longitude data from: ', self.basename)
             raise ose
@@ -79,3 +81,27 @@ class Auxhist:
 
     def __add__(self, other):
         return self.rain + other.rain
+
+    def rain_to_tiff(self, out_abspath):
+        if not os.path.isabs(out_abspath):
+            raise ValueError("The path provided is not absolute")
+        if not isinstance(self.rain, np.ndarray):
+            raise ValueError("The array provided is not a valid numpy array")
+        gdal.AllRegister()
+        driver = gdal.GetDriverByName('Gtiff')
+        geotransform = (-1215126.603, 11011.141, 0, 3470069.010, 0, 11011.138)
+        outDataset_options = ['COMPRESS=LZW']
+        dtype = gdal.GDT_Int16
+        if self.rain.dtype == np.float32:
+            dtype = gdal.GDT_Float32
+        outDataset = driver.Create(out_abspath, self.rain.shape[1], self.rain.shape[0],
+                                   1, dtype, outDataset_options)
+        outDataset.SetGeoTransform(geotransform)
+        srs = osr.SpatialReference()
+        srs.ImportFromEPSG(3857)
+        outDataset.SetProjection(srs.ExportToWkt())
+        outband = outDataset.GetRasterBand(1)
+        outband.WriteArray(self.rain)
+        outband.GetStatistics(0, 1)
+        del outband
+        del outDataset
