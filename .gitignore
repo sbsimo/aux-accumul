@@ -1,6 +1,7 @@
 #aux-accumul related project
 auxfiles/a*
 .idea/
+other_data/
 
 
 # Byte-compiled / optimized / DLL files

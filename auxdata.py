@@ -9,7 +9,13 @@ from osgeo import gdal, osr
 class Auxhist:
     """A class wrapper for aux data files"""
 
+    DATE_FORMAT = '%Y-%m-%d_%H_%M_%S'
+
     def __init__(self, abspath):
+        """Initialize an Auxhist object, given the absolute path of its data file
+
+        :param abspath: a string representing the absolute path of a data file in the os.path flavour
+        """
         if not os.path.isfile(abspath):
             raise ValueError('This argument must be an absolute path to a netcdf file')
         self.abspath = abspath
@@ -24,6 +30,11 @@ class Auxhist:
         self._check_start_dt()
 
     def _check_start_dt(self):
+        """Check whether the start datetime given in the filename corresponds to the start datetime given
+        in the time dimension of its netcdf variable
+
+        :return: None
+        """
         tokens = self.basename.split('_')
         date_tokens = [int(token) for token in tokens[2].split('-')]
         time_tokens = [int(token) for token in tokens[3:6]]
@@ -31,6 +42,12 @@ class Auxhist:
         delta_start_dt = declared_start_dt - self.start_dt
         if delta_start_dt > datetime.timedelta(minutes=1) or delta_start_dt < datetime.timedelta(minutes=-1):
             raise ValueError('The date and time declared in the filename are wrong!')
+
+    def __gt__(self, other):
+        return self.start_dt > other.start_dt
+
+    def __add__(self, other):
+        return self.rain + other.rain
 
     @property
     def rainc(self):
@@ -76,13 +93,12 @@ class Auxhist:
             raise ose
         return ys
 
-    def __gt__(self, other):
-        return self.start_dt > other.start_dt
-
-    def __add__(self, other):
-        return self.rain + other.rain
-
     def rain_to_tiff(self, out_abspath):
+        """Generate a geotiff file with the sum of data contained in the RAINC and RAINNC variables
+
+        :param out_abspath: a string containing the absolute path of the output file in the os.path flavour
+        :return: None
+        """
         if not os.path.isabs(out_abspath):
             raise ValueError("The path provided is not absolute")
         if not isinstance(self.rain, np.ndarray):
