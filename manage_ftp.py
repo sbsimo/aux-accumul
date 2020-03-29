@@ -5,8 +5,6 @@ import pysftp
 
 from auxdata import Auxhist
 
-DATADIR = os.path.join(os.path.dirname(__file__), 'data', 'auxfiles')
-
 
 class MirrorSFTP:
 
@@ -19,6 +17,7 @@ class MirrorSFTP:
         self.HOST = config['SFTP']['HOST']
         self.USER = config['SFTP']['USER']
         self.PASSWORD = config['SFTP']['PASSWORD']
+        self.DATADIR = os.path.join(os.path.dirname( __file__), config['STRUCTURE']['DATADIR'])
 
     def list_sftp_files(self):
         with pysftp.Connection(self.HOST, username=self.USER, password=self.PASSWORD, cnopts=self.cnopts) as sftp:
@@ -26,7 +25,7 @@ class MirrorSFTP:
         return filenames
 
     def list_local_files(self):
-        return os.listdir(DATADIR)
+        return os.listdir(self.DATADIR)
 
     def id_missing_files(self):
         sftp_file_names = set(self.list_sftp_files())
@@ -40,7 +39,7 @@ class MirrorSFTP:
     def get_file(self, fname):
         clean_fname = fname.replace(':', '_')
         remotepath = '/'.join([self.remote_folder, fname])
-        localpath = os.path.join(DATADIR, clean_fname)
+        localpath = os.path.join(self.DATADIR, clean_fname)
         print('Saving {0}\n    as {1} ...'.format(fname, clean_fname))
         for i in range(1, 4):
             print('    Attempt number ' + str(i))
