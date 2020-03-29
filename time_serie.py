@@ -109,15 +109,14 @@ class PrecipTimeSerie:
             raise ValueError("The array provided is not a valid numpy array")
         gdal.AllRegister()
         driver = gdal.GetDriverByName('Gtiff')
-        #TODO: read geotransform from Auxhist class
-        geotransform = (-1215126.603, 11011.141, 0, 3470069.010, 0, 11011.138)
+        geotransform = (Auxhist.X_MIN, Auxhist.X_GSD, 0, Auxhist.Y_MIN, 0, Auxhist.Y_GSD)
         outDataset_options = ['COMPRESS=LZW']
         dtype = gdal.GDT_Int16
         outDataset = driver.Create(out_abspath, self.accumul.shape[1], self.accumul.shape[0],
                                    1, dtype, outDataset_options)
         outDataset.SetGeoTransform(geotransform)
         srs = osr.SpatialReference()
-        srs.ImportFromEPSG(3857)
+        srs.ImportFromEPSG(Auxhist.EPSG_code)
         outDataset.SetProjection(srs.ExportToWkt())
         outband = outDataset.GetRasterBand(1)
         outband.WriteArray(self.accumul)

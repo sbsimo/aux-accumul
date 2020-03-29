@@ -10,6 +10,11 @@ class Auxhist:
     """A class wrapper for aux data files"""
 
     DATE_FORMAT = '%Y-%m-%d_%H_%M_%S'
+    X_MIN = -1215126.603
+    X_GSD = 11011.141
+    Y_MIN = 3470069.010
+    Y_GSD = 11011.138
+    EPSG_code = 3857
 
     def __init__(self, abspath):
         """Initialize an Auxhist object, given the absolute path of its data file
@@ -105,16 +110,14 @@ class Auxhist:
             raise ValueError("The array provided is not a valid numpy array")
         gdal.AllRegister()
         driver = gdal.GetDriverByName('Gtiff')
-        geotransform = (-1215126.603, 11011.141, 0, 3470069.010, 0, 11011.138)
+        geotransform = (self.X_MIN, self.X_GSD, 0, self.Y_MIN, 0, self.Y_GSD)
         outDataset_options = ['COMPRESS=LZW']
-        dtype = gdal.GDT_Int16
-        if self.rain.dtype == np.float32:
-            dtype = gdal.GDT_Float32
+        dtype = gdal.GDT_Float32
         outDataset = driver.Create(out_abspath, self.rain.shape[1], self.rain.shape[0],
                                    1, dtype, outDataset_options)
         outDataset.SetGeoTransform(geotransform)
         srs = osr.SpatialReference()
-        srs.ImportFromEPSG(3857)
+        srs.ImportFromEPSG(self.EPSG_code)
         outDataset.SetProjection(srs.ExportToWkt())
         outband = outDataset.GetRasterBand(1)
         outband.WriteArray(self.rain)
