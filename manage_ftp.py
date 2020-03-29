@@ -8,7 +8,7 @@ from auxdata import Auxhist
 DATADIR = os.path.join(os.path.dirname(__file__), 'data', 'auxfiles')
 
 
-class AuxSFTP:
+class MirrorSFTP:
 
     def __init__(self):
         self.cnopts = pysftp.CnOpts()
