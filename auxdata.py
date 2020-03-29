@@ -97,7 +97,7 @@ class Auxhist:
         """Generate a geotiff file with the sum of data contained in the RAINC and RAINNC variables
 
         :param out_abspath: a string containing the absolute path of the output file in the os.path flavour
-        :return: None
+        :return: 0 if successful
         """
         if not os.path.isabs(out_abspath):
             raise ValueError("The path provided is not absolute")
@@ -121,3 +121,4 @@ class Auxhist:
         outband.GetStatistics(0, 1)
         del outband
         del outDataset
+        return 0

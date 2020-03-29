@@ -24,6 +24,10 @@ class TestTimeSerie(unittest.TestCase):
     def test_accumul(self):
         self.assertIsInstance(self.timeserie.accumul, np.ndarray)
 
+    def test_accumul_to_tiff(self):
+        #TODO: implement this test
+        pass
+
 
 class TestStartStopTimeSerie(unittest.TestCase):
     def setUp(self) -> None:

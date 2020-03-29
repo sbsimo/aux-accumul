@@ -49,14 +49,17 @@ class AuxSFTP:
             try:
                 Auxhist(localpath)
                 print('... done')
-                break
+                return 0
             except:
                 os.remove(localpath)
                 print('The download number {:d} did not work'.format(i))
+        return 1
 
     def get_files(self, fnames):
         for fname in fnames:
             self.get_file(fname)
+        return 0
 
     def get_missing_files(self):
         self.get_files(self.id_missing_files())
+        return 0

@@ -3,6 +3,7 @@ import glob
 import os
 
 import numpy as np
+from gdal import osgeo, osr
 
 from auxdata import Auxhist
 
@@ -95,3 +96,32 @@ class PrecipTimeSerie:
         if self._accumul is None:
             self._accumul = np.around(np.sum(self.serie, axis=0, keepdims=False), 0).astype(np.int16)
         return self._accumul
+
+    def accumul_to_tiff(self, out_abspath):
+        """Generate a geotiff file with the accumulated data
+
+        :param out_abspath: a string containing the absolute path of the output file in the os.path flavour
+        :return: 0 if successful
+        """
+        if not os.path.isabs(out_abspath):
+            raise ValueError("The path provided is not absolute")
+        if not isinstance(self.accumul, np.ndarray):
+            raise ValueError("The array provided is not a valid numpy array")
+        gdal.AllRegister()
+        driver = gdal.GetDriverByName('Gtiff')
+        #TODO: read geotransform from Auxhist class
+        geotransform = (-1215126.603, 11011.141, 0, 3470069.010, 0, 11011.138)
+        outDataset_options = ['COMPRESS=LZW']
+        dtype = gdal.GDT_Int16
+        outDataset = driver.Create(out_abspath, self.accumul.shape[1], self.accumul.shape[0],
+                                   1, dtype, outDataset_options)
+        outDataset.SetGeoTransform(geotransform)
+        srs = osr.SpatialReference()
+        srs.ImportFromEPSG(3857)
+        outDataset.SetProjection(srs.ExportToWkt())
+        outband = outDataset.GetRasterBand(1)
+        outband.WriteArray(self.accumul)
+        outband.GetStatistics(0, 1)
+        del outband
+        del outDataset
+        return 0
