@@ -3,17 +3,18 @@ import glob
 import os
 
 import numpy as np
-from gdal import osgeo, osr
+from osgeo import gdal, osr
 
-from auxdata import Auxhist
+from wrfita_aux import WrfItaAux
 
 class PrecipTimeSerie:
+    # TODO change the docs
     """handle and manage a time serie of precipitation data"""
 
     def __init__(self, measures):
         """Initialize a time serie object starting from an iterable of precipitation data
 
-        :param measures: an iterable of Auxhist objects
+        :param measures: an iterable of WrfItaAux objects
         """
         self.measures = measures
         self.measures.sort()
@@ -25,6 +26,9 @@ class PrecipTimeSerie:
             deltat = self.measures[i + 1].start_dt - self.measures[i].end_dt
             if deltat > datetime.timedelta(minutes=1):
                 raise ValueError('Some measurements are missing in the serie')
+        # geometric parameters
+        self.geotransform = self.measures[0].geotransform
+        self.EPSG_CODE = self.measures[0].EPSG_CODE
 
         self._serie = None
         self._accumul = None
@@ -42,8 +46,8 @@ class PrecipTimeSerie:
         :return: a PrecipTimeSerie object
         """
         measures = []
-        for absfname in glob.glob(os.path.join(datadir, 'auxhist*')):
-            ah = Auxhist(absfname)
+        for absfname in glob.glob(os.path.join(datadir, 'sft_rftm_rg_wrfita_aux_d02_*')):
+            ah = WrfItaAux(absfname)
             if ah.start_dt < stop_dt and ah.end_dt > start_dt:
                 measures.append(ah)
         if measures:
@@ -58,27 +62,12 @@ class PrecipTimeSerie:
         :param datadir: a string representing a folder in the os.path flavour
         :return: a PrecipTimeSerie object
         """
-        measures = [Auxhist(absfname) for absfname in glob.glob(os.path.join(datadir, 'auxhist*'))]
+        measures = [WrfItaAux(absfname) for absfname in glob.glob(os.path.join(datadir,
+                                                                               'sft_rftm_rg_wrfita_aux_d02_*'))]
         if measures:
             return cls(measures)
         else:
             raise Exception('There are no suitable data in the folder, for the timeframe provided!')
-
-    @classmethod
-    def farthest(cls, datadir, duration):
-        """Generate a time serie object given a folder and the ideal duration of the serie. This serie ends including
-        the farthest data file in time available in the given folder
-
-        :param datadir: a string representing a folder in the os.path flavour
-        :param duration: a timedelta object representing the ideal duration of the serie
-        :return: a PrecipTimeSerie object
-        """
-        file_list = glob.glob(os.path.join(datadir, 'auxhist*'))
-        file_list.sort(reverse=True)
-        stop_dt = datetime.datetime.strptime(file_list[0][-19:], Auxhist.DATE_FORMAT)
-        start_dt = stop_dt - duration
-
-        return cls.from_dir(datadir, start_dt, stop_dt)
 
     @property
     def serie(self):
@@ -94,7 +83,7 @@ class PrecipTimeSerie:
     def accumul(self):
         """Generates and returns a 2d array with the accumulated precipitation data for the entire time serie"""
         if self._accumul is None:
-            self._accumul = np.around(np.sum(self.serie, axis=0, keepdims=False), 0).astype(np.int16)
+            self._accumul = self.measures[-1].rain.astype(np.int16)
         return self._accumul
 
     def accumul_to_tiff(self, out_abspath):
@@ -109,17 +98,19 @@ class PrecipTimeSerie:
             raise ValueError("The array provided is not a valid numpy array")
         gdal.AllRegister()
         driver = gdal.GetDriverByName('Gtiff')
-        geotransform = (Auxhist.X_MIN, Auxhist.X_GSD, 0, Auxhist.Y_MIN, 0, Auxhist.Y_GSD)
         outDataset_options = ['COMPRESS=LZW']
         dtype = gdal.GDT_Int16
-        outDataset = driver.Create(out_abspath, self.accumul.shape[1], self.accumul.shape[0],
-                                   1, dtype, outDataset_options)
-        outDataset.SetGeoTransform(geotransform)
+        outDataset = driver.Create(out_abspath, self.accumul.shape[1], self.accumul.shape[0], 1,
+                                   dtype, outDataset_options)
+        outDataset.SetGeoTransform(self.geotransform)
         srs = osr.SpatialReference()
-        srs.ImportFromEPSG(Auxhist.EPSG_code)
+        srs.ImportFromEPSG(self.EPSG_CODE)
         outDataset.SetProjection(srs.ExportToWkt())
         outband = outDataset.GetRasterBand(1)
-        outband.WriteArray(self.accumul)
+        nodata_value = np.iinfo(self.accumul.dtype).max
+        outband.SetNoDataValue(nodata_value)
+        self.accumul.fill_value = nodata_value
+        outband.WriteArray(self.accumul.filled())
         outband.GetStatistics(0, 1)
         del outband
         del outDataset

@@ -15,13 +15,69 @@ class WrfItaAux:
         self.dirname, self.basename = os.path.split(abspath)
         with Dataset(abspath) as ds:
             self.period = datetime.timedelta(hours=ds.variables['time'][:][0])
-            self.start_dt = datetime.datetime(2000, 1, 1) + self.period
+        self.start_dt = datetime.datetime(2000, 1, 1) + self.period
+        self.end_dt = self.start_dt + datetime.timedelta(hours=1)
+        # TODO implement model run time extraction
+        self.model_run_dt = None
+        # geometric characteristics below
+        self._x_min = None
+        self._x_max = None
+        self._y_min = None # self.lats[0]
+        self._y_max = None # self.lats[-1]
+        self._pixel_size_x = None
+        self._pixel_size_y = None
+        self._geotransform = None
+        # rain values below
         self._no_data_rainc = None
         self._no_data_rainnc = None
         self._no_data = None
 
     def __gt__(self, other):
         return self.start_dt > other.start_dt
+
+    @property
+    def x_min(self):
+        if self._x_min is None:
+            self._x_min = self.lons[0]
+        return self._x_min
+
+    @property
+    def x_max(self):
+        if self._x_max is None:
+            self._x_max = self.lons[-1]
+        return self._x_max
+
+    @property
+    def y_min(self):
+        if self._y_min is None:
+            self._y_min = self.lats[0]
+        return self._y_min
+
+    @property
+    def y_max(self):
+        # TODO produce tests for these
+        if self._y_max is None:
+            self._y_max = self.lats[-1]
+        return self._y_max
+
+    @property
+    def pixel_size_x(self):
+        if self._pixel_size_x is None:
+            self._pixel_size_x = (self.x_max - self.x_min)/(len(self.lons) - 1)
+        return self._pixel_size_x
+
+    @property
+    def pixel_size_y(self):
+        # TODO implement test for these
+        if self._pixel_size_y is None:
+            self._pixel_size_y = (self.y_max - self.y_min)/(len(self.lats) - 1)
+        return self._pixel_size_y
+
+    @property
+    def geotransform(self):
+        if self._geotransform is None:
+            self._geotransform = (self.x_min, self.pixel_size_x, 0, self.y_min, 0, self.pixel_size_y)
+        return self._geotransform
 
     @property
     def rainc(self):
@@ -94,18 +150,10 @@ class WrfItaAux:
             raise ValueError("The array provided is not a valid numpy array")
         gdal.AllRegister()
         driver = gdal.GetDriverByName('Gtiff')
-        x_min = self.lons[0]
-        x_max = self.lons[-1]
-        x_gsd = (x_max - x_min)/(len(self.lons) - 1)
-        y_min = self.lats[0]
-        y_max = self.lats[-1]
-        y_gsd = (y_max - y_min)/(len(self.lats) - 1)
-        geotransform = (x_min, x_gsd, 0, y_min, 0, y_gsd)
         outDataset_options = ['COMPRESS=LZW']
         dtype = gdal.GDT_Float32
-        outDataset = driver.Create(out_abspath, self.rain.shape[1], self.rain.shape[0],
-                                   1, dtype, outDataset_options)
-        outDataset.SetGeoTransform(geotransform)
+        outDataset = driver.Create(out_abspath, self.rain.shape[1], self.rain.shape[0], 1, dtype, outDataset_options)
+        outDataset.SetGeoTransform(self.geotransform)
         srs = osr.SpatialReference()
         srs.ImportFromEPSG(self.EPSG_CODE)
         outDataset.SetProjection(srs.ExportToWkt())
