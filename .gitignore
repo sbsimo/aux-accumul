@@ -3,6 +3,7 @@ auxfiles/a*
 .idea/
 other_data/
 data/
+wrf/
 
 
 # Byte-compiled / optimized / DLL files
