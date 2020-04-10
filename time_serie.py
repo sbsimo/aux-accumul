@@ -56,16 +56,25 @@ class PrecipTimeSerie:
             raise Exception('There are no suitable data in the folder, for the timeframe provided!')
 
     @classmethod
-    def from_all_dir(cls, datadir):
-        """Generate a time serie object given a folder
+    def from_all_dir(cls, datadir, model_run_dt=False):
+        """Generate a time serie object given a folder and the date of a model run.
 
         :param datadir: a string representing a folder in the os.path flavour
+        :param model_run_dt: a datetime object representing the model run date and time (default is the current day
+         at midnight)
         :return: a PrecipTimeSerie object
         """
+        if not model_run_dt:
+            model_run_dt = datetime.datetime.combine(datetime.date.today(), datetime.time())
         measures = [WrfItaAux(absfname) for absfname in glob.glob(os.path.join(datadir,
                                                                                'sft_rftm_rg_wrfita_aux_d02_*'))]
-        if measures:
-            return cls(measures)
+        filtered_measures = []
+        for measure in measures:
+            if measure.model_run_dt == model_run_dt:
+                filtered_measures.append(measure)
+
+        if filtered_measures:
+            return cls(filtered_measures)
         else:
             raise Exception('There are no suitable data in the folder, for the timeframe provided!')
 

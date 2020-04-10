@@ -8,22 +8,23 @@ from osgeo import gdal, osr
 
 class WrfItaAux:
     EPSG_CODE = 4326
+    FILENAME_FORMAT = 'sft_rftm_rg_wrfita_aux_d02_%Y-%m-%d_00_*'
 
     def __init__(self, abspath):
         self.abspath = abspath
-        # TODO basename contains strange time format, check on manual
         self.dirname, self.basename = os.path.split(abspath)
         with Dataset(abspath) as ds:
             self.period = datetime.timedelta(hours=ds.variables['time'][:][0])
-        self.start_dt = datetime.datetime(2000, 1, 1) + self.period
-        self.end_dt = self.start_dt + datetime.timedelta(hours=1)
-        # TODO implement model run time extraction
-        self.model_run_dt = None
+        self.end_dt = datetime.datetime(2000, 1, 1) + self.period
+        self.start_dt = self.end_dt - datetime.timedelta(hours=1)
+        self.model_run_dt = datetime.datetime.strptime(self.basename[:-2], self.FILENAME_FORMAT[:-1])
+        if self.model_run_dt > self.start_dt:
+            self.start_dt = self.model_run_dt
         # geometric characteristics below
         self._x_min = None
         self._x_max = None
-        self._y_min = None # self.lats[0]
-        self._y_max = None # self.lats[-1]
+        self._y_min = None
+        self._y_max = None
         self._pixel_size_x = None
         self._pixel_size_y = None
         self._geotransform = None
@@ -34,6 +35,9 @@ class WrfItaAux:
 
     def __gt__(self, other):
         return self.start_dt > other.start_dt
+
+    def __lt__(self, other):
+        return self.start_dt < other.start_dt
 
     @property
     def x_min(self):
