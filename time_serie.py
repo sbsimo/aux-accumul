@@ -56,25 +56,43 @@ class PrecipTimeSerie:
             raise Exception('There are no suitable data in the folder, for the timeframe provided!')
 
     @classmethod
-    def from_all_dir(cls, datadir, model_run_dt=False):
+    def earliest_from_dir(cls, datadir, model_run_dt=None, duration=False):
         """Generate a time serie object given a folder and the date of a model run.
 
         :param datadir: a string representing a folder in the os.path flavour
         :param model_run_dt: a datetime object representing the model run date and time (default is the current day
          at midnight)
+        :param duration: a timedelta object representing the duration of the time serie (default is undefined)
         :return: a PrecipTimeSerie object
         """
-        if not model_run_dt:
-            model_run_dt = datetime.datetime.combine(datetime.date.today(), datetime.time())
         measures = [WrfItaAux(absfname) for absfname in glob.glob(os.path.join(datadir,
                                                                                'sft_rftm_rg_wrfita_aux_d02_*'))]
+
+        if model_run_dt is None:
+            model_run_dt = datetime.datetime.combine(datetime.date.today(), datetime.time())
+        else:
+            if not isinstance(model_run_dt, datetime.datetime):
+                raise ValueError
         filtered_measures = []
         for measure in measures:
             if measure.model_run_dt == model_run_dt:
                 filtered_measures.append(measure)
 
-        if filtered_measures:
-            return cls(filtered_measures)
+        if duration:
+            if not isinstance(duration, datetime.timedelta):
+                raise ValueError
+            refiltered_measures = []
+            for measure in filtered_measures:
+                if measure.start_dt < model_run_dt + duration:
+                    refiltered_measures.append(measure)
+        else:
+            refiltered_measures = filtered_measures
+
+        if refiltered_measures:
+            tsobj = cls(refiltered_measures)
+            if duration and duration > tsobj.duration:
+                raise Exception('Missing measures in the serie, the period is not complete!')
+            return tsobj
         else:
             raise Exception('There are no suitable data in the folder, for the timeframe provided!')
 

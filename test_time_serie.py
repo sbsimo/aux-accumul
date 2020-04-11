@@ -43,7 +43,7 @@ class TestStartStopTimeSerie(unittest.TestCase):
 
 class TestAllDataTimeSerie(unittest.TestCase):
     def setUp(self) -> None:
-        self.timeserie = PrecipTimeSerie.from_all_dir(DATADIR)
+        self.timeserie = PrecipTimeSerie.earliest_from_dir(DATADIR)
 
     def test_number(self):
         self.assertEqual(11, len(self.timeserie))
