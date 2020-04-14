@@ -120,7 +120,7 @@ class PrecipTimeSerie:
         :return: 0 if successful
         """
         if not os.path.isabs(out_abspath):
-            raise ValueError("The path provided is not absolute")
+            raise ValueError("The path provided is not absolute: " + out_abspath)
         if not isinstance(self.accumul, np.ndarray):
             raise ValueError("The array provided is not a valid numpy array")
         gdal.AllRegister()
