@@ -17,7 +17,7 @@ class MirrorSFTP:
         self.HOST = config['SFTP']['HOST']
         self.USER = config['SFTP']['USER']
         self.PASSWORD = config['SFTP']['PASSWORD']
-        self.DATADIR = os.path.join(os.path.dirname( __file__), config['STRUCTURE']['DATADIR'])
+        self.DATADIR = config['STRUCTURE']['DATADIR']
 
     def list_today_sftp_files(self):
         # TODO test this method

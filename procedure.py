@@ -7,11 +7,11 @@ from manage_ftp import MirrorSFTP
 
 
 def start(model_run_datetime=None):
-# build a serie
+    # build a serie
     # read working dir
     config = configparser.ConfigParser()
     config.read('config.ini')
-    datadir = os.path.join(os.path.dirname(__file__), config['STRUCTURE']['DATADIR'])
+    datadir = config['STRUCTURE']['DATADIR']
     # define duration
     duration_hours = (12, 24, 36, 48)
     for duration_hour in duration_hours:
