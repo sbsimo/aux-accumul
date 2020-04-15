@@ -1,0 +1,11 @@
+# build the image for CIMA data
+docker build --tag dati_cima:1.0 .
+
+# run the image for the first time
+docker run -it --volume /path/to/host/data/folder:/home/aux-accumul/data/wrf --name dati_cima dati_cima:1.0
+# substitute the first part of the --volume switch with the destination host folder, like below
+# docker run -it --volume /home/maz0095\@msad.it4i.lexis.tech/cima_dati/dati:/home/aux-accumul/data/wrf --name dati_cima dati_cima:1.0
+
+# download and process the image as needed
+docker start -a dati_cima
+

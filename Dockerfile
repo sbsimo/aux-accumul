@@ -10,8 +10,8 @@ RUN pip3 install pysftp
 RUN pip3 install numpy --upgrade
 
 COPY . /home/aux-accumul
-
+VOLUME /home/aux-accumul/data/wrf
 WORKDIR /home/aux-accumul
 
-CMD bash
+CMD python3 procedure.py
 
