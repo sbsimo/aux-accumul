@@ -127,6 +127,7 @@ class PrecipTimeSerie:
         driver = gdal.GetDriverByName('Gtiff')
         outDataset_options = ['COMPRESS=LZW']
         dtype = gdal.GDT_Int16
+        print('Writing accumulation file --> ', out_abspath)
         outDataset = driver.Create(out_abspath, self.accumul.shape[1], self.accumul.shape[0], 1,
                                    dtype, outDataset_options)
         outDataset.SetGeoTransform(self.geotransform)
@@ -139,6 +140,7 @@ class PrecipTimeSerie:
         self.accumul.fill_value = nodata_value
         outband.WriteArray(self.accumul.filled())
         outband.GetStatistics(0, 1)
+        print('accumulation file written!')
         del outband
         del outDataset
         return 0

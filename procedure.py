@@ -4,6 +4,7 @@ import datetime
 
 from time_serie import PrecipTimeSerie
 from manage_ftp import MirrorSFTP
+from alerts import AlertExtractor
 
 
 def start(model_run_datetime=None):
@@ -22,12 +23,14 @@ def start(model_run_datetime=None):
         # write acculumation
         oabspath = os.path.join(datadir, 'outfile_accumul_{}_hours.tif'.format(duration_hour))
         tsobj.accumul_to_tiff(oabspath)
+        # extract alerts and save
+        AlertExtractor.from_serie(tsobj).save_alerts(datadir)
 
 
 if __name__ == '__main__':
     # mirror_sftp_site()
     MirrorSFTP().get_missing_files()
     # for testing purposes fixing the model run date
-    # model_run_datetime = datetime.datetime(2020, 4, 10)
+    # model_run_datetime = datetime.datetime(2020, 4, 11)
     # start(model_run_datetime)
     start()
