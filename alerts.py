@@ -93,6 +93,27 @@ class Alerts:
         self.barray = barray
         self.geotransform = geotransform
         self.epsg_code = epsg_code
+        self._mask = None
+        self._masked_barray = None
+        project_root = os.path.dirname(__file__)
+        config_abspath = os.path.join(project_root, 'config.ini')
+        config = configparser.ConfigParser()
+        config.read(config_abspath)
+        self.mask_fname = config['Mask filename']['mask']
+        self.mask_abspath = os.path.join(project_root, 'tool_data', self.mask_fname)
+        del config
+
+    @property
+    def mask(self):
+        if self._mask is None:
+            self._mask = tif2array(self.mask_abspath)
+        return self._mask
+
+    @property
+    def masked_barray(self):
+        if self._masked_barray is None:
+            self._masked_barray = tif2array(self.mask_abspath) * self.mask
+        return self._masked_barray
 
     def save2tiff(self, out_abspath):
         """Generate a geotiff file with the accumulated data
@@ -102,14 +123,14 @@ class Alerts:
         """
         if not os.path.isabs(out_abspath):
             raise ValueError("The path provided is not absolute: " + out_abspath)
-        if not isinstance(self.barray, np.ndarray):
+        if not isinstance(self.masked_barray, np.ndarray):
             raise ValueError("The array provided is not a valid numpy array")
         gdal.AllRegister()
         driver = gdal.GetDriverByName('Gtiff')
         outDataset_options = ['COMPRESS=LZW']
         dtype = gdal.GDT_Byte
         print('Writing alert file --> ', out_abspath)
-        outDataset = driver.Create(out_abspath, self.barray.shape[1], self.barray.shape[0], 1,
+        outDataset = driver.Create(out_abspath, self.masked_barray.shape[1], self.masked_barray.shape[0], 1,
                                    dtype, outDataset_options)
         outDataset.SetGeoTransform(self.geotransform)
         srs = osr.SpatialReference()
@@ -120,7 +141,7 @@ class Alerts:
         # nodata_value = np.iinfo(self.accumul.dtype).max
         # outband.SetNoDataValue(nodata_value)
         # self.accumul.fill_value = nodata_value
-        outband.WriteArray(self.barray)
+        outband.WriteArray(self.masked_barray)
         outband.GetStatistics(0, 1)
         del outband
         del outDataset
