@@ -25,7 +25,8 @@ class PrecipTimeSerie:
         for i in range(len(self.measures) - 1):
             deltat = self.measures[i + 1].start_dt - self.measures[i].end_dt
             if deltat > datetime.timedelta(minutes=1):
-                raise ValueError('Some measurements are missing in the serie')
+                raise ValueError('Some measurements are missing in the serie, in particular covering the time period '
+                                 'following ' + self.measures[i].end_dt.isoformat())
         # geometric parameters
         self.geotransform = self.measures[0].geotransform
         self.EPSG_CODE = self.measures[0].EPSG_CODE
