@@ -1,9 +1,16 @@
 import os
+import configparser
 
 import numpy as np
 from osgeo import gdal, osr
 
 from time_serie import PrecipTimeSerie
+
+
+def tif2array(tif_abspath):
+    ds = gdal.Open(tif_abspath, gdal.GA_ReadOnly)
+    array = ds.GetRasterBand(1).ReadAsArray()
+    return array
 
 
 class AlertExtractor:
@@ -20,14 +27,14 @@ class AlertExtractor:
 
     @classmethod
     def from_serie(cls, serie_obj):
-        threshold_obj = Threshold()
+        threshold_obj = Threshold(int(serie_obj.duration.total_seconds() // 3600))
         return cls(serie_obj, threshold_obj)
 
     def get_alerts(self):
         return Alerts(self.serie.accumul > self.threshold.grid, self.serie.geotransform, self.serie.EPSG_CODE)
 
     def save_alerts(self, outdir):
-        out_fname = 'gibbone_' + str(self.serie.duration.total_seconds() // 3600) + 'h.tif'
+        out_fname = 'gibbone_' + str(int(self.serie.duration.total_seconds() // 3600)) + 'h.tif'
         alerts_obj = self.get_alerts()
         alerts_obj.save2tiff(os.path.join(outdir, out_fname))
 
@@ -59,11 +66,26 @@ class AlertExtractor:
 
 
 class Threshold:
+    def __init__(self, hours):
+        if not isinstance(hours, int):
+            raise ValueError('Duration must be expressed in hours, integer value is expected')
+        self.hours = hours
+        self._grid = None
+        project_root = os.path.dirname(__file__)
+        config_abspath = os.path.join(project_root, 'config.ini')
+        config = configparser.ConfigParser()
+        config.read(config_abspath)
+        self.tif_name = config['Grid Thresholds'][str(hours) + 'h']
+        self.tif_abspath = os.path.join(project_root, 'tool_data', self.tif_name)
+        del config
 
     @property
     def grid(self):
-        # TODO check real shape
-        return np.zeros((447, 764), np.uint16) + 50
+        if self._grid is None:
+            self._grid = tif2array(self.tif_abspath)
+            # grid_toflip = tif2array(self.tif_abspath).T
+            # self._grid = np.fliplr(grid_toflip)
+        return self._grid
 
 
 class Alerts:

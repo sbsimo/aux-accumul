@@ -80,7 +80,8 @@ class WrfItaAux:
     @property
     def geotransform(self):
         if self._geotransform is None:
-            self._geotransform = (self.x_min, self.pixel_size_x, 0, self.y_min, 0, self.pixel_size_y)
+            self._geotransform = (self.x_min - self.pixel_size_x / 2, self.pixel_size_x, 0,
+                                  self.y_min - self.pixel_size_y / 2, 0, self.pixel_size_y)
         return self._geotransform
 
     @property
