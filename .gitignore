@@ -4,6 +4,7 @@ auxfiles/a*
 other_data/
 data/
 wrf/
+tool_data/
 
 
 # Byte-compiled / optimized / DLL files
