@@ -39,15 +39,17 @@ def start(model_run_datetime=None):
 
 def clean_datadir():
     with open(JSON_ABSFILEP, 'r') as jf:
-        latest_model_run_dt = datetime.datetime.fromisoformat(json.load(jf))
+        latest_model_run_dt = datetime.datetime.strptime(json.load(jf)[:11], '%Y-%m-%dT')
     to_keep = set(glob.glob(os.path.join(DATADIR, latest_model_run_dt.strftime(FILENAME_FORMAT))))
     all = set(glob.glob(os.path.join(DATADIR, FILENAME_FORMAT[:-13] + '*')))
     to_delete = all - to_keep
+    print('Deleting ',  len(to_delete), ' older input files...')
     for absfname in to_delete:
         try:
             os.remove(absfname)
         except:
             print('Cannot remove file ', absfname, ' Please remove it manually.')
+    print('\tfiles deleted!')
 
 
 if __name__ == '__main__':
@@ -62,3 +64,5 @@ if __name__ == '__main__':
     # for testing purposes you can fix the model run date, as done below
     # model_run_dt = datetime.datetime(2020, 6, 5)
     # start(model_run_dt)
+
+
