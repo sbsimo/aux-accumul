@@ -14,7 +14,6 @@ def tif2array(tif_abspath):
 
 
 class AlertExtractor:
-    # TIF_BASENAME = 'alerts_{:03d}h.tif'
 
     def __init__(self, serie, threshold):
         if not isinstance(serie, PrecipTimeSerie):
@@ -38,32 +37,6 @@ class AlertExtractor:
         alerts_obj = self.get_alerts()
         alerts_obj.save2tiff(os.path.join(outdir, out_fname))
 
-        # self.hours = int(serie.duration.total_seconds() // 3600)
-        # try:
-        #     self.threshold_obj = GridThreshold(self.hours)
-        # except:
-        #     print('Grid threshold not available for {:3d} hours duration'.format(self.hours))
-        #     self.threshold_obj = Threshold(self.hours)
-
-    # def get_masked_alerts(self):
-    #     alerts = self.detect_alerts()
-    #     mask = self.get_mask()
-    #     return alerts * mask
-
-    # def save_masked_alerts(self, out_dir):
-    #     tif_basename = self.TIF_BASENAME.format(self.hours)
-    #     tif_abspath = os.path.join(out_dir, tif_basename)
-    #     array2tiff(self.get_masked_alerts(), tif_abspath)
-    #
-    # def get_mask(self):
-    #     config = configparser.ConfigParser()
-    #     config.read(THRESHOLDS_ABSPATH)
-    #     mask_filename = config['Files']['mask']
-    #     mask_dirname = os.path.dirname(THRESHOLDS_ABSPATH)
-    #     mask_abspath = os.path.join(mask_dirname, mask_filename)
-    #     gpm_mask = tiff2array(mask_abspath)
-    #     return np.fliplr(gpm_mask.T)
-
 
 class Threshold:
     def __init__(self, hours):
@@ -82,9 +55,7 @@ class Threshold:
     @property
     def grid(self):
         if self._grid is None:
-            self._grid = tif2array(self.tif_abspath)
-            # grid_toflip = tif2array(self.tif_abspath).T
-            # self._grid = np.fliplr(grid_toflip)
+            self._grid = np.flipud(tif2array(self.tif_abspath))
         return self._grid
 
 
@@ -106,13 +77,13 @@ class Alerts:
     @property
     def mask(self):
         if self._mask is None:
-            self._mask = tif2array(self.mask_abspath)
+            self._mask = np.flipud(tif2array(self.mask_abspath))
         return self._mask
 
     @property
     def masked_barray(self):
         if self._masked_barray is None:
-            self._masked_barray = tif2array(self.mask_abspath) * self.mask
+            self._masked_barray = self.barray * self.mask
         return self._masked_barray
 
     def save2tiff(self, out_abspath):
@@ -145,5 +116,5 @@ class Alerts:
         outband.GetStatistics(0, 1)
         del outband
         del outDataset
-        print('alert file written!')
+        print('\talert file written!')
         return 0

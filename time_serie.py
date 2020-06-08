@@ -141,7 +141,7 @@ class PrecipTimeSerie:
         self.accumul.fill_value = nodata_value
         outband.WriteArray(self.accumul.filled())
         outband.GetStatistics(0, 1)
-        print('accumulation file written!')
+        print('\taccumulation file written!')
         del outband
         del outDataset
         return 0
