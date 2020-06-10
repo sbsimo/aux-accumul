@@ -32,10 +32,9 @@ class AlertExtractor:
     def get_alerts(self):
         return Alerts(self.serie.accumul > self.threshold.grid, self.serie.geotransform, self.serie.EPSG_CODE)
 
-    def save_alerts(self, outdir):
-        out_fname = 'gibbone_' + str(int(self.serie.duration.total_seconds() // 3600)) + 'h.tif'
+    def save_alerts(self, absfname):
         alerts_obj = self.get_alerts()
-        alerts_obj.save2tiff(os.path.join(outdir, out_fname))
+        alerts_obj.save2tiff(absfname)
 
 
 class Threshold:
@@ -70,7 +69,7 @@ class Alerts:
         config_abspath = os.path.join(project_root, 'config.ini')
         config = configparser.ConfigParser()
         config.read(config_abspath)
-        self.mask_fname = config['Mask filename']['mask']
+        self.mask_fname = config['Filename formats']['mask']
         self.mask_abspath = os.path.join(project_root, 'tool_data', self.mask_fname)
         del config
 

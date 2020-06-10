@@ -12,7 +12,11 @@ from alerts import AlertExtractor
 config = configparser.ConfigParser()
 config.read('config.ini')
 DATADIR = config['STRUCTURE']['DATADIR']
-JSON_ABSFILEP = os.path.join(DATADIR, 'gibbone.json')
+ACCUMUL_FNAME = config['Filename formats']['accumulated_rain']
+ALERT_FNAME = config['Filename formats']['alert']
+MODEL_RUN_REF_TIME = config['Filename formats']['model_run_ref_time']
+del config
+JSON_ABSFILEP = os.path.join(DATADIR, MODEL_RUN_REF_TIME)
 FILENAME_FORMAT = 'sft_rftm_rg_wrfita_aux_d02_%Y-%m-%d_00_*'
 
 
@@ -26,10 +30,11 @@ def start(model_run_datetime=None):
         tsobj = PrecipTimeSerie.earliest_from_dir(DATADIR, model_run_datetime, duration)
         # calculate accumulation --> no need to
         # write acculumation
-        oabspath = os.path.join(DATADIR, 'outfile_accumul_{}_hours.tif'.format(duration_hour))
+        oabspath = os.path.join(DATADIR, ACCUMUL_FNAME.format(hours=duration_hour))
         tsobj.accumul_to_tiff(oabspath)
         # extract alerts and save
-        AlertExtractor.from_serie(tsobj).save_alerts(DATADIR)
+        alert_absfname = os.path.join(DATADIR, ALERT_FNAME.format(hours=duration_hour))
+        AlertExtractor.from_serie(tsobj).save_alerts(alert_absfname)
     # save model run timestamp
     with open(JSON_ABSFILEP, 'w') as jf:
         print('Writing json file with current model run datetime...')
@@ -64,5 +69,3 @@ if __name__ == '__main__':
     # for testing purposes you can fix the model run date, as done below
     # model_run_dt = datetime.datetime(2020, 6, 5)
     # start(model_run_dt)
-
-
