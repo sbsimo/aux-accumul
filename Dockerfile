@@ -13,5 +13,5 @@ COPY . /home/aux-accumul
 VOLUME /home/aux-accumul/data/wrf
 WORKDIR /home/aux-accumul
 
-CMD python3 procedure.py
+CMD python3 procedure.py > data/wrf/wrf_process.log 2>&1
 
