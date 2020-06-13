@@ -34,6 +34,16 @@ class WrfItaAux:
         self._no_data = None
 
     def __gt__(self, other):
+        """Compare the current WrfItaAux object with another.
+
+        Return true if the instant of initial time corresponding to the
+        current object comes after the instant of initial time of the
+        other object.
+
+        :param other: WrfItaAux
+            the other object in comparison
+        :return: bool
+        """
         return self.start_dt > other.start_dt
 
     def __lt__(self, other):
@@ -41,6 +51,12 @@ class WrfItaAux:
 
     @property
     def x_min(self):
+        """Get the minimum longitude value.
+
+        :return: float
+            A floating point number corresponding to the minimun
+            longitude value
+        """
         if self._x_min is None:
             self._x_min = self.lons[0]
         return self._x_min
@@ -66,6 +82,10 @@ class WrfItaAux:
 
     @property
     def pixel_size_x(self):
+        """Get the pixel size in along the longitude axis.
+
+        :return: float
+        """
         if self._pixel_size_x is None:
             self._pixel_size_x = (self.x_max - self.x_min)/(len(self.lons) - 1)
         return self._pixel_size_x
@@ -86,6 +106,15 @@ class WrfItaAux:
 
     @property
     def rainc(self):
+        """Get the array of RAINC values.
+
+        Open the netCDF4 file on disk and read the RAINC variable, as
+        well as the NoData value for it.
+
+        :return: numpy.ndarray
+        :raise: OSError
+            in case the variable cannot be read.
+        """
         try:
             with Dataset(self.abspath) as ds:
                 rainc = ds.variables['RAINC'][0]
@@ -144,10 +173,16 @@ class WrfItaAux:
         return self._no_data
 
     def rain_to_tiff(self, out_abspath):
-        """Generate a geotiff file with the sum of data contained in the RAINC and RAINNC variables
+        """Write rain values to tiff.
 
-        :param out_abspath: a string containing the absolute path of the output file in the os.path flavour
-        :return: 0 if successful
+        Generate a geotiff file with the sum of data contained in the
+        RAINC and RAINNC variables
+
+        :param: str
+            the absolute path of the output file
+            in the os.path flavour
+        :return: int
+            0 if successful
         """
         if not os.path.isabs(out_abspath):
             raise ValueError("The path provided is not absolute")
