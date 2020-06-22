@@ -19,3 +19,11 @@ Please substitute the first part of the --volume switch with the destination hos
     docker start -a dati_cima
 
 ## Development mode
+### Requirements are GDAL and Python 3 (minimum tested version is 3.6) with the following packages:
+* python-gdal
+* numpy
+* scipy
+* netCDF4
+* pysftp
+### The main module is __procedure.py__ , run it with the command
+    python3 procedure.py
