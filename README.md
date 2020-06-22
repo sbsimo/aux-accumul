@@ -7,8 +7,8 @@ Generates forecasted alerts for extreme-precipitation events
 or simply download the repository and extract it in your server
 
 ### STEP 2 - Customize the procedure
-1. copy the sea/land mask file and the rain-threshold files in the tool_data folder
-1. edit the config.ini file with proper values
+1. copy the sea/land mask file and the rain-threshold files in the [tool_data](./tool_data) folder
+1. edit the [config.ini](./config.ini) file with proper values
 
 ### STEP 3 - Build the Docker image using the following commands
     cd aux-accumul
