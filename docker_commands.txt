@@ -9,3 +9,7 @@ docker run -it --volume /path/to/host/data/folder:/home/aux-accumul/data/wrf --n
 # download and process the image as needed
 docker start -a dati_cima
 
+
+# generate documentation with pydoc
+python3 -m pydoc <name>
+python3 -m pydoc -b
