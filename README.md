@@ -1,8 +1,12 @@
 # aux-accumul repository
-Generates forecasted alerts for extreme-precipitation events
+Generates forecasted alerts for extreme-precipitation events.
+
+For two accumulation periods of time (24 hours and 48 hours) the main script:
+1. read and save the accumulated precipitation values to disk (in the DATADIR folder)
+1. generate and save the alerts file to disk (in the DATADIR folder)
 
 ## Usage in production mode
-### STEP 1 - Clone the repository in your server using git 
+### STEP 1 - Clone the repository in your server using git
     git clone https://github.com/ITHACA-org/aux-accumul.git
 or simply download the repository and extract it in your server
 
@@ -13,7 +17,7 @@ or simply download the repository and extract it in your server
 ### STEP 3 - Build the Docker image using the following commands
     cd aux-accumul
     docker build --tag tag_name:version .
-You should now have a docker image with that <tag_name>. 
+You should now have a docker image with that <tag_name>.
 
 ### STEP 4 - Run the image for the first time with the following command
     docker run -it --volume /path/to/host/data/folder:/home/aux-accumul/data/wrf --name container_name tag_name:version
