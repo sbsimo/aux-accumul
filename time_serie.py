@@ -1,3 +1,4 @@
+"""Define a class for generating and managing time serie data"""
 import datetime
 import glob
 import os
@@ -8,15 +9,29 @@ from osgeo import gdal, osr
 from wrfita_aux import WrfItaAux
 
 class PrecipTimeSerie:
-    # TODO change the docs
-    """handle and manage a time serie of precipitation data"""
+    """Generate and manage a time serie of precipitation data
+
+    Attributes:
+        measures: list
+            a list of observations of the WrfItaAux class
+        start_dt: datetime.datetime
+            the instant in which the time series begins
+        stop_dt: datetime.datetime
+            the instant in which the time series ends
+        duration: datetime.timedelta
+            the difference between the end and the start of the serie
+        geotransform: tuple
+            Generate the affine geotransform coefficients according to
+            https://gdal.org/user/raster_data_model.html#affine-geotransform
+        EPSG_CODE: int
+            the code of the spatial reference
+    """
 
     def __init__(self, measures):
-        """Initialize a time serie object starting from an iterable of precipitation data
-
-        :param measures: an iterable of WrfItaAux objects
         """
-        self.measures = measures
+        :param measures: iterable of WrfItaAux objects
+        """
+        self.measures = list(measures)
         self.measures.sort()
         self.start_dt = self.measures[0].start_dt
         self.stop_dt = self.measures[-1].end_dt
@@ -35,16 +50,25 @@ class PrecipTimeSerie:
         self._accumul = None
 
     def __len__(self):
+        """Get the number of measures in the serie.
+
+        :return: int
+        """
         return len(self.measures)
 
     @classmethod
     def from_dir(cls, datadir, start_dt, stop_dt):
-        """Generate a time serie object given a folder and a start and a stop datetime
+        """An alternate constructor for the PrecipTimeSerie class.
 
-        :param datadir: a string representing a folder in the os.path flavour
-        :param start_dt: a datetime representing the ideal beginning of the serie
-        :param stop_dt: a datetime representing the ideal end of the serie
-        :return: a PrecipTimeSerie object
+        :param datadir: str
+            a folder in the os.path flavour
+        :param start_dt: datetime.datetime
+            the ideal beginning of the serie
+        :param stop_dt: datetime.datetime
+            the ideal end of the serie
+        :return: PrecipTimeSerie
+        :raise: Exception
+            in no WRF data is available in the folder
         """
         measures = []
         for absfname in glob.glob(os.path.join(datadir, 'sft_rftm_rg_wrfita_aux_d02_*')):
@@ -58,13 +82,22 @@ class PrecipTimeSerie:
 
     @classmethod
     def earliest_from_dir(cls, datadir, model_run_dt=None, duration=False):
-        """Generate a time serie object given a folder and the date of a model run.
+        """Another alternate constructor for the PrecipTimeSerie class.
 
-        :param datadir: a string representing a folder in the os.path flavour
-        :param model_run_dt: a datetime object representing the model run date and time (default is the current day
-         at midnight)
-        :param duration: a timedelta object representing the duration of the time serie (default is undefined)
-        :return: a PrecipTimeSerie object
+        Generate a time serie object given a folder and optionally
+        the date of a model run and the duration of the serie.
+
+        :param datadir: str
+            a string representing a folder in the os.path flavour
+        :param model_run_dt: datetime.datetime
+            a datetime object representing the model run date and time
+            (default is the current day at midnight)
+        :param duration: datetime.timedelta
+            the duration of the time serie (default is undefined)
+        :return: PrecipTimeSerie
+        :raise: ValueError
+            in case the model_run_dt or the duration params don't have
+            an appropriate type
         """
         measures = [WrfItaAux(absfname) for absfname in glob.glob(os.path.join(datadir,
                                                                                'sft_rftm_rg_wrfita_aux_d02_*'))]
@@ -99,9 +132,12 @@ class PrecipTimeSerie:
 
     @property
     def serie(self):
-        """Generates and returns a 3d array with the precipitation data for the entire time serie
+        """Get the precipitation time serie.
 
-        :return: a 3d numpy array
+        Generates and returns a 3d array with the precipitation data
+        for the entire time serie.
+
+        :return: numpy.ndarray
         """
         if self._serie is None:
             self._serie = np.array([measure.rain for measure in self.measures])
@@ -109,16 +145,25 @@ class PrecipTimeSerie:
 
     @property
     def accumul(self):
-        """Generates and returns a 2d array with the accumulated precipitation data for the entire time serie"""
+        """Get the accumulated precipitation.
+
+        Generates and returns a 2d array with the accumulated
+        precipitation data for the entire time serie.
+
+        :return: numpy.ndarray
+        """
         if self._accumul is None:
             self._accumul = self.measures[-1].rain.astype(np.int16)
         return self._accumul
 
     def accumul_to_tiff(self, out_abspath):
-        """Generate a geotiff file with the accumulated data
+        """Write accumulated rain values to geotiff.
 
-        :param out_abspath: a string containing the absolute path of the output file in the os.path flavour
-        :return: 0 if successful
+        :param: str
+            the absolute path of the output file
+            in the os.path flavour
+        :return: int
+            0 if successful
         """
         if not os.path.isabs(out_abspath):
             raise ValueError("The path provided is not absolute: " + out_abspath)
